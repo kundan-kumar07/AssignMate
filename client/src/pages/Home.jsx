@@ -1,70 +1,88 @@
 import { useState, useEffect } from "react";
 import Navbar from "../components/Navbar";
+import { useUser } from "@clerk/react";
+import axios from "axios";
+import toast from "react-hot-toast";
 
 export default function Home() {
+  const { user } = useUser();
+
   const [showInput, setShowInput] = useState(false);
   const [task, setTask] = useState("");
   const [selectedDate, setSelectedDate] = useState("");
   const [selectedTime, setSelectedTime] = useState("");
   const [tasks, setTasks] = useState([]);
 
-  // Load tasks
-  useEffect(() => {
-    const storedTasks = localStorage.getItem("tasks");
+  const API = "http://localhost:5000/api/tasks";
 
-    if (storedTasks) {
+  // 🔥 Fetch Tasks
+  useEffect(() => {
+    if (!user?.id) return;
+
+    const fetchTasks = async () => {
       try {
-        setTasks(JSON.parse(storedTasks));
-      } catch (error) {
-        console.error("Error parsing tasks:", error);
-        setTasks([]);
+        const res = await axios.get(`${API}/${user.id}`);
+        setTasks(res.data);
+      } catch (err) {
+        toast.error("Failed to fetch tasks");
       }
-    }
-  }, []);
+    };
 
-  // Save tasks
-  const [isFirstLoad, setIsFirstLoad] = useState(true);
+    fetchTasks();
+  }, [user]);
 
-  useEffect(() => {
-    if (isFirstLoad) {
-      setIsFirstLoad(false);
+  // 🔥 Add Task
+  const addTask = async () => {
+    if (!task.trim()) {
+      toast.error("Task cannot be empty");
       return;
     }
 
-    localStorage.setItem("tasks", JSON.stringify(tasks));
-  }, [tasks]);
-
-  const addTask = () => {
-    if (task.trim() === "") return;
-
-    setTasks([
-      ...tasks,
-      {
+    try {
+      const res = await axios.post(`${API}/add`, {
         text: task,
-        completed: false,
         date: selectedDate,
         time: selectedTime,
-      },
-    ]);
+        userId: user?.id,
+        email: user?.primaryEmailAddress?.emailAddress,
+      });
 
-    setTask("");
-    setSelectedDate("");
-    setSelectedTime("");
-    setShowInput(false);
+      const data = res.data;
+
+      if (data.success) {
+        setTasks((prev) => [...prev, data.data]);
+        toast.success("Task added successfully");
+      }
+
+      // Reset
+      setTask("");
+      setSelectedDate("");
+      setSelectedTime("");
+      setShowInput(false);
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Something went wrong");
+    }
   };
 
+  // 🔥 Toggle Complete
   const toggleComplete = (index) => {
     const updated = [...tasks];
     updated[index].completed = !updated[index].completed;
     setTasks(updated);
   };
 
-  const deleteTask = (index) => {
-    const updated = tasks.filter((_, i) => i !== index);
-    setTasks(updated);
+  // 🔥 Delete Task
+  const deleteTask = async (id) => {
+    try {
+      await axios.delete(`${API}/${id}`);
+      setTasks((prev) => prev.filter((task) => task._id !== id));
+      toast.success("Task deleted");
+    } catch (err) {
+      toast.error("Failed to delete task");
+    }
   };
 
-  // 🔥 Smart status using DATE + TIME
+  // 🔥 Status Logic
   const getStatus = (date, time) => {
     if (!date || !time) return "";
 
@@ -74,117 +92,150 @@ export default function Home() {
     if (taskDateTime < now) return "overdue";
 
     const today = new Date();
-    const isToday =
-      taskDateTime.toDateString() === today.toDateString();
+    const isToday = taskDateTime.toDateString() === today.toDateString();
 
     if (isToday) return "today";
 
     return "upcoming";
   };
 
+  // 🔥 Dynamic Min Time
+  const getMinTime = () => {
+    const today = new Date().toISOString().split("T")[0];
+
+    if (selectedDate === today) {
+      const now = new Date();
+      const hours = String(now.getHours()).padStart(2, "0");
+      const minutes = String(now.getMinutes()).padStart(2, "0");
+      return `${hours}:${minutes}`;
+    }
+
+    return "00:00";
+  };
+
   return (
-    <div className="min-h-screen bg-gray-900 text-white">
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-900 text-white">
       <Navbar />
 
-      <div className="p-6 max-w-xl mx-auto">
+      <div className="p-4 sm:p-6 md:p-8 max-w-3xl lg:max-w-4xl xl:max-w-5xl mx-auto">
+        
+        {/* Header */}
+        <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-6 text-center">
+          📋 Your Tasks
+        </h1>
 
-        {/* CTA */}
+        {/* Add Button */}
         {!showInput && (
           <button
             onClick={() => setShowInput(true)}
-            className="w-full py-4 text-lg bg-gradient-to-r from-indigo-500 to-purple-600 rounded-xl shadow-lg hover:scale-105 transition"
+            className="w-full py-3 sm:py-4 text-base sm:text-lg bg-indigo-600 hover:bg-indigo-700 rounded-xl shadow-lg transition transform hover:scale-105"
           >
-            🚀 Click to set reminder for your task
+            ➕ Add New Task
           </button>
         )}
 
-        {/* Input */}
+        {/* Input Card */}
         {showInput && (
-          <div className="bg-gray-800 p-4 rounded-xl mt-4 shadow-lg space-y-3">
-
-            {/* Task */}
+          <div className="bg-white/10 backdrop-blur-md p-4 sm:p-5 rounded-2xl mt-5 shadow-xl space-y-4 border border-white/20">
+            
             <input
               value={task}
               onChange={(e) => setTask(e.target.value)}
-              placeholder="Enter your assignment..."
-              className="w-full px-4 py-2 rounded-lg text-black"
+              placeholder="Enter your task..."
+              className="w-full px-4 py-2 sm:py-3 rounded-lg bg-transparent border border-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
             />
 
-            {/* Date */}
-            <input
-              type="date"
-              value={selectedDate}
-              onChange={(e) => setSelectedDate(e.target.value)}
-              className="w-full px-4 py-2 rounded-lg text-black"
-            />
+            <div className="flex flex-col sm:flex-row gap-3">
+              <input
+                type="date"
+                value={selectedDate}
+                onChange={(e) => {
+                  setSelectedDate(e.target.value);
+                  setSelectedTime("");
+                }}
+                min={new Date().toISOString().split("T")[0]}
+                className="w-full px-3 py-2 rounded-xl text-white"
+              />
 
-            {/* Time */}
-            <input
-              type="time"
-              value={selectedTime}
-              onChange={(e) => setSelectedTime(e.target.value)}
-              className="w-full px-4 py-2 rounded-lg text-black"
-            />
+              <input
+                type="time"
+                value={selectedTime}
+                onChange={(e) => setSelectedTime(e.target.value)}
+                min={getMinTime()}
+                className="w-full px-3 py-2 rounded-xl text-white"
+              />
+            </div>
 
-            {/* Buttons */}
-            <div className="flex gap-2">
+            <div className="flex flex-col sm:flex-row gap-3">
               <button
                 onClick={addTask}
-                className="bg-green-500 px-4 py-2 rounded-lg"
+                className="flex-1 bg-green-500 hover:bg-green-600 py-2 sm:py-3 rounded-lg transition"
               >
-                Add
+                ✅ Add
               </button>
 
               <button
                 onClick={() => setShowInput(false)}
-                className="bg-red-500 px-4 py-2 rounded-lg"
+                className="flex-1 bg-red-500 hover:bg-red-600 py-2 sm:py-3 rounded-lg transition"
               >
-                Cancel
+                ❌ Cancel
               </button>
             </div>
           </div>
         )}
 
+        {/* Empty State */}
+        {tasks.length === 0 && (
+          <div className="text-center mt-10 text-gray-400">
+            <p className="text-lg sm:text-xl">😴 No tasks yet</p>
+            <p className="text-sm">Add your first task above</p>
+          </div>
+        )}
+
         {/* Task List */}
-        <div className="mt-6 space-y-3">
+        <div className="mt-6 space-y-4 max-h-[60vh] overflow-y-auto pr-1">
           {tasks.map((item, index) => {
             const status = getStatus(item.date, item.time);
 
+            const statusColor =
+              status === "overdue"
+                ? "bg-red-500"
+                : status === "today"
+                ? "bg-yellow-500"
+                : "bg-green-500";
+
             return (
               <div
-                key={index}
-                className={`p-3 rounded flex justify-between items-center ${
-                  status === "overdue"
-                    ? "bg-red-900"
-                    : status === "today"
-                    ? "bg-yellow-800"
-                    : "bg-gray-800"
-                }`}
+                key={item._id || index}
+                className="bg-white/10 backdrop-blur-md p-3 sm:p-4 rounded-2xl shadow-lg border border-white/10 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 hover:scale-[1.02] transition"
               >
-                <div>
+                <div className="w-full">
                   <p
                     onClick={() => toggleComplete(index)}
-                    className={`cursor-pointer ${
+                    className={`text-base sm:text-lg cursor-pointer ${
                       item.completed ? "line-through text-gray-400" : ""
                     }`}
                   >
                     {item.text}
                   </p>
 
-                  {/* Date + Time */}
-                  {(item.date || item.time) && (
-                    <p className="text-sm">
-                      📅 {item.date} ⏰ {item.time}{" "}
-                      {status === "overdue" && "🔴 Overdue"}
-                      {status === "today" && "🟡 Due Today"}
-                      {status === "upcoming" && "🟢 Upcoming"}
-                    </p>
-                  )}
+                  <div className="flex flex-wrap items-center gap-2 text-xs sm:text-sm mt-1">
+                    <span>📅 {item.date}</span>
+                    <span>⏰ {item.time}</span>
+
+                    {status && (
+                      <span
+                        className={`px-2 py-1 rounded-full text-xs text-black ${statusColor}`}
+                      >
+                        {status}
+                      </span>
+                    )}
+                  </div>
                 </div>
 
                 <button
-                  onClick={() => deleteTask(index)}
-                  className="text-red-300 hover:text-red-500"
+                  onClick={() => deleteTask(item._id)}
+                  className="self-end sm:self-auto text-red-400 hover:text-red-600 text-lg sm:text-xl transition"
                 >
                   🗑️
                 </button>
@@ -192,7 +243,6 @@ export default function Home() {
             );
           })}
         </div>
-
       </div>
     </div>
   );
