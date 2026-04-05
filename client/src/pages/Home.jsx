@@ -4,6 +4,9 @@ import { useUser } from "@clerk/react";
 import axios from "axios";
 import toast from "react-hot-toast";
 
+// ✅ Add this line
+const API = import.meta.env.VITE_API;
+
 export default function Home() {
   const { user } = useUser();
 
@@ -13,15 +16,13 @@ export default function Home() {
   const [selectedTime, setSelectedTime] = useState("");
   const [tasks, setTasks] = useState([]);
 
-  const API = "http://localhost:5000/api/tasks";
-
   // 🔥 Fetch Tasks
   useEffect(() => {
     if (!user?.id) return;
 
     const fetchTasks = async () => {
       try {
-        const res = await axios.get(`${API}/${user.id}`);
+        const res = await axios.get(`${API}/api/tasks/${user.id}`);
         setTasks(res.data);
       } catch (err) {
         toast.error("Failed to fetch tasks");
@@ -39,7 +40,7 @@ export default function Home() {
     }
 
     try {
-      const res = await axios.post(`${API}/add`, {
+      const res = await axios.post(`${API}/api/tasks/add`, {
         text: task,
         date: selectedDate,
         time: selectedTime,
@@ -74,7 +75,7 @@ export default function Home() {
   // 🔥 Delete Task
   const deleteTask = async (id) => {
     try {
-      await axios.delete(`${API}/${id}`);
+      await axios.delete(`${API}/api/tasks/${id}`);
       setTasks((prev) => prev.filter((task) => task._id !== id));
       toast.success("Task deleted");
     } catch (err) {
@@ -118,13 +119,10 @@ export default function Home() {
       <Navbar />
 
       <div className="p-4 sm:p-6 md:p-8 max-w-3xl lg:max-w-4xl xl:max-w-5xl mx-auto">
-        
-        {/* Header */}
         <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-6 text-center">
           📋 Your Tasks
         </h1>
 
-        {/* Add Button */}
         {!showInput && (
           <button
             onClick={() => setShowInput(true)}
@@ -134,10 +132,8 @@ export default function Home() {
           </button>
         )}
 
-        {/* Input Card */}
         {showInput && (
           <div className="bg-white/10 backdrop-blur-md p-4 sm:p-5 rounded-2xl mt-5 shadow-xl space-y-4 border border-white/20">
-            
             <input
               value={task}
               onChange={(e) => setTask(e.target.value)}
@@ -184,7 +180,6 @@ export default function Home() {
           </div>
         )}
 
-        {/* Empty State */}
         {tasks.length === 0 && (
           <div className="text-center mt-10 text-gray-400">
             <p className="text-lg sm:text-xl">😴 No tasks yet</p>
@@ -192,7 +187,6 @@ export default function Home() {
           </div>
         )}
 
-        {/* Task List */}
         <div className="mt-6 space-y-4 max-h-[60vh] overflow-y-auto pr-1">
           {tasks.map((item, index) => {
             const status = getStatus(item.date, item.time);
