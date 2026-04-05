@@ -19,23 +19,21 @@ app.get("/", (req, res) => {
   res.send("API is running 🚀");
 });
 
-
-const PORT = 5000;
+// ✅ FIXED PORT (IMPORTANT)
+const PORT = process.env.PORT || 5000;
 
 // 🔥 Proper startup flow
 const startServer = async () => {
   try {
     await connectDB();
-    
 
-    // start cron AFTER DB
-    setTimeout(() => {
-      startCronJobs();
-    }, 5000);
+    // ✅ start cron AFTER DB (no need for long delay)
+    startCronJobs();
 
     app.listen(PORT, () => {
       console.log(`🚀 Server running on port ${PORT}`);
     });
+
   } catch (error) {
     console.error("❌ Server failed to start:", error);
   }
