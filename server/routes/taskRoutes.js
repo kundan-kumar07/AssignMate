@@ -81,9 +81,16 @@ router.delete("/:id", async (req, res) => {
   }
 });
 // Update task (mark complete/incomplete)
-app.put("/api/tasks/:id", async (req, res) => {
+router.put("/:id", async (req, res) => {
   try {
     const { completed } = req.body;
+
+    if (typeof completed !== "boolean") {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid completed value",
+      });
+    }
 
     const updatedTask = await Task.findByIdAndUpdate(
       req.params.id,
@@ -91,9 +98,19 @@ app.put("/api/tasks/:id", async (req, res) => {
       { new: true }
     );
 
+    if (!updatedTask) {
+      return res.status(404).json({
+        success: false,
+        message: "Task not found",
+      });
+    }
+
     res.json({ success: true, data: updatedTask });
   } catch (err) {
-    res.status(500).json({ success: false, message: "Update failed" });
+    res.status(500).json({
+      success: false,
+      message: "Update failed",
+    });
   }
 });
 
