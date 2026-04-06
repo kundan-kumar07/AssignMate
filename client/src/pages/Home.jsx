@@ -4,7 +4,6 @@ import { useUser } from "@clerk/react";
 import axios from "axios";
 import toast from "react-hot-toast";
 
-// ✅ Add this line
 const API = import.meta.env.VITE_API;
 
 export default function Home() {
@@ -39,6 +38,17 @@ export default function Home() {
       return;
     }
 
+    if (!selectedDate || !selectedTime) {
+      toast.error("Select date and time");
+      return;
+    }
+
+    // ✅ Ensure correct format HH:MM
+    if (!selectedTime.includes(":")) {
+      toast.error("Invalid time format");
+      return;
+    }
+
     try {
       const res = await axios.post(`${API}/api/tasks/add`, {
         text: task,
@@ -48,14 +58,11 @@ export default function Home() {
         email: user?.primaryEmailAddress?.emailAddress,
       });
 
-      const data = res.data;
-
-      if (data.success) {
-        setTasks((prev) => [...prev, data.data]);
+      if (res.data.success) {
+        setTasks((prev) => [...prev, res.data.data]);
         toast.success("Task added successfully");
       }
 
-      // Reset
       setTask("");
       setSelectedDate("");
       setSelectedTime("");
@@ -83,21 +90,24 @@ export default function Home() {
     }
   };
 
-  // 🔥 Status Logic
+  // 🔥 FIXED Status Logic (no timezone bug)
   const getStatus = (date, time) => {
     if (!date || !time) return "";
 
+    const today = new Date().toISOString().split("T")[0];
+
+    if (date < today) return "overdue";
+    if (date > today) return "upcoming";
+
     const now = new Date();
-    const taskDateTime = new Date(`${date}T${time}`);
+    const nowMinutes = now.getHours() * 60 + now.getMinutes();
 
-    if (taskDateTime < now) return "overdue";
+    const [hours, minutes] = time.split(":").map(Number);
+    const taskMinutes = hours * 60 + minutes;
 
-    const today = new Date();
-    const isToday = taskDateTime.toDateString() === today.toDateString();
+    if (taskMinutes < nowMinutes) return "overdue";
 
-    if (isToday) return "today";
-
-    return "upcoming";
+    return "today";
   };
 
   // 🔥 Dynamic Min Time
@@ -108,6 +118,7 @@ export default function Home() {
       const now = new Date();
       const hours = String(now.getHours()).padStart(2, "0");
       const minutes = String(now.getMinutes()).padStart(2, "0");
+
       return `${hours}:${minutes}`;
     }
 
