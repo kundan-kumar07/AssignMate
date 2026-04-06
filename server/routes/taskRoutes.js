@@ -80,5 +80,21 @@ router.delete("/:id", async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 });
+// Update task (mark complete/incomplete)
+app.put("/api/tasks/:id", async (req, res) => {
+  try {
+    const { completed } = req.body;
+
+    const updatedTask = await Task.findByIdAndUpdate(
+      req.params.id,
+      { completed },
+      { new: true }
+    );
+
+    res.json({ success: true, data: updatedTask });
+  } catch (err) {
+    res.status(500).json({ success: false, message: "Update failed" });
+  }
+});
 
 export default router;

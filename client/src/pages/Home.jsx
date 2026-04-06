@@ -67,11 +67,23 @@ export default function Home() {
   };
 
   // Toggle Complete
-  const toggleComplete = (index) => {
+  const toggleComplete = async (id, index) => {
+  try {
+    const updatedStatus = !tasks[index].completed;
+
+    await axios.put(`${API}/api/tasks/${id}`, {
+      completed: updatedStatus,
+    });
+
     const updated = [...tasks];
-    updated[index].completed = !updated[index].completed;
+    updated[index].completed = updatedStatus;
     setTasks(updated);
-  };
+
+    toast.success(updatedStatus ? "Marked as done ✅" : "Marked as pending 🔄");
+  } catch (err) {
+    toast.error("Failed to update task");
+  }
+};
 
   // Delete Task
   const deleteTask = async (id) => {
@@ -394,6 +406,7 @@ export default function Home() {
         }
 
         .btn-cancel:hover {
+
           background: rgba(255,255,255,0.03);
           color: #94a3b8;
           border-color: rgba(255,255,255,0.12);
@@ -782,14 +795,14 @@ export default function Home() {
                   {/* Check circle */}
                   <div
                     className={`task-check ${item.completed ? "checked" : ""}`}
-                    onClick={() => toggleComplete(index)}
+                    onClick={() => toggleComplete(item._id, index)}
                   />
 
                   {/* Body */}
                   <div className="task-body">
                     <p
                       className={`task-text ${item.completed ? "done" : ""}`}
-                      onClick={() => toggleComplete(index)}
+                      onClick={() => toggleComplete(item._id, index)}
                     >
                       {item.text}
                     </p>
