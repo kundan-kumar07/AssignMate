@@ -280,6 +280,29 @@ export default function Home() {
 
         @media (max-width: 480px) { .datetime-row { grid-template-columns: 1fr; } }
 
+        /* Fix date/time inputs on mobile — force light color scheme so icons & text are visible */
+        input[type="date"],
+        input[type="time"] {
+          color-scheme: light;
+          background: #f1f5f9 !important;
+          color: #0f172a !important;
+          border-color: rgba(15,23,42,0.12) !important;
+        }
+
+        input[type="date"]:focus,
+        input[type="time"]:focus {
+          border-color: #f97316 !important;
+          box-shadow: 0 0 0 3px rgba(249,115,22,0.15) !important;
+          background: #f8fafc !important;
+        }
+
+        input[type="date"]::-webkit-calendar-picker-indicator,
+        input[type="time"]::-webkit-calendar-picker-indicator {
+          filter: none;
+          opacity: 0.6;
+          cursor: pointer;
+        }
+
         .action-row {
           display: grid;
           grid-template-columns: 1fr 1fr;
@@ -632,7 +655,6 @@ export default function Home() {
                     }}
                     min={new Date().toISOString().split("T")[0]}
                     className="text-input"
-                    style={{ colorScheme: "dark" }}
                   />
                   <input
                     type="time"
@@ -640,7 +662,6 @@ export default function Home() {
                     onChange={(e) => setSelectedTime(e.target.value)}
                     min={getMinTime()}
                     className="text-input"
-                    style={{ colorScheme: "dark" }}
                   />
                 </div>
               </div>
