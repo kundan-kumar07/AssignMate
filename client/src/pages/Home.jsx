@@ -280,26 +280,77 @@ export default function Home() {
 
         @media (max-width: 480px) { .datetime-row { grid-template-columns: 1fr; } }
 
-        /* Fix date/time inputs on mobile — force light color scheme so icons & text are visible */
+        .datetime-field-wrap {
+          display: flex;
+          flex-direction: column;
+          gap: 6px;
+        }
+
+        .datetime-field-label {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          font-family: 'Syne', sans-serif;
+          font-size: 0.7rem;
+          font-weight: 700;
+          letter-spacing: 0.1em;
+          text-transform: uppercase;
+          color: #fbbf24;
+          background: rgba(251,191,36,0.08);
+          border: 1px solid rgba(251,191,36,0.15);
+          padding: 5px 10px;
+          border-radius: 6px;
+          width: fit-content;
+        }
+
+        .datetime-input {
+          border-radius: 10px !important;
+          padding: 11px 14px !important;
+          font-size: 0.88rem !important;
+          min-height: 48px;
+        }
+
+        /* Responsive fixes */
+        @media (max-width: 640px) {
+          .page-inner { padding: 32px 16px 80px; }
+          .page-header { margin-bottom: 32px; }
+          .stats-row { gap: 10px; }
+          .stat-card { padding: 12px 10px; }
+          .stat-num { font-size: 1.3rem; }
+          .stat-label { font-size: 0.6rem; }
+          .input-card { padding: 20px 16px; border-radius: 18px; }
+          .add-btn { padding: 16px 20px; font-size: 0.95rem; }
+          .action-row { grid-template-columns: 1fr 1fr; gap: 10px; }
+          .btn-confirm, .btn-cancel { padding: 13px 10px; font-size: 0.85rem; }
+          .task-card { padding: 14px 14px; gap: 12px; }
+          .task-text { font-size: 0.9rem; white-space: normal; }
+          .task-meta { gap: 8px; }
+          .meta-chip { font-size: 0.7rem; }
+          .delete-btn { width: 30px; height: 30px; font-size: 0.8rem; }
+        }
+
+        /* Date/time inputs — light background is the ONLY reliable cross-platform fix */
+        /* iOS Safari ignores ::-webkit-calendar-picker-indicator so we use light bg */
         input[type="date"],
         input[type="time"] {
           color-scheme: light;
-          background: #f1f5f9 !important;
+          background: #ffffff !important;
           color: #0f172a !important;
-          border-color: rgba(15,23,42,0.12) !important;
+          border-color: rgba(251,191,36,0.3) !important;
+          font-family: 'DM Sans', sans-serif !important;
+          font-size: 0.88rem !important;
         }
 
         input[type="date"]:focus,
         input[type="time"]:focus {
           border-color: #f97316 !important;
           box-shadow: 0 0 0 3px rgba(249,115,22,0.15) !important;
-          background: #f8fafc !important;
+          background: #fff7ed !important;
         }
 
         input[type="date"]::-webkit-calendar-picker-indicator,
         input[type="time"]::-webkit-calendar-picker-indicator {
-          filter: none;
-          opacity: 0.6;
+          opacity: 0.5;
           cursor: pointer;
         }
 
@@ -644,25 +695,46 @@ export default function Home() {
               </div>
 
               <div className="field-group">
-                <label className="input-label">Schedule</label>
+                <label className="input-label">Set Reminder</label>
                 <div className="datetime-row">
-                  <input
-                    type="date"
-                    value={selectedDate}
-                    onChange={(e) => {
-                      setSelectedDate(e.target.value);
-                      setSelectedTime("");
-                    }}
-                    min={new Date().toISOString().split("T")[0]}
-                    className="text-input"
-                  />
-                  <input
-                    type="time"
-                    value={selectedTime}
-                    onChange={(e) => setSelectedTime(e.target.value)}
-                    min={getMinTime()}
-                    className="text-input"
-                  />
+
+                  <div className="datetime-field-wrap">
+                    <span className="datetime-field-label">
+                      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" width="12" height="12">
+                        <rect x="2" y="3" width="12" height="11" rx="2"/>
+                        <path d="M5 1v4M11 1v4M2 7h12"/>
+                      </svg>
+                      Pick a Date
+                    </span>
+                    <input
+                      type="date"
+                      value={selectedDate}
+                      onChange={(e) => {
+                        setSelectedDate(e.target.value);
+                        setSelectedTime("");
+                      }}
+                      min={new Date().toISOString().split("T")[0]}
+                      className="text-input datetime-input"
+                    />
+                  </div>
+
+                  <div className="datetime-field-wrap">
+                    <span className="datetime-field-label">
+                      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" width="12" height="12">
+                        <circle cx="8" cy="8" r="6"/>
+                        <path d="M8 5v3.5l2.5 1.5"/>
+                      </svg>
+                      Pick a Time
+                    </span>
+                    <input
+                      type="time"
+                      value={selectedTime}
+                      onChange={(e) => setSelectedTime(e.target.value)}
+                      min={getMinTime()}
+                      className="text-input datetime-input"
+                    />
+                  </div>
+
                 </div>
               </div>
 
