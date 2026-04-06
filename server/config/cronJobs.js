@@ -18,7 +18,7 @@ const buildEmailContent = (tasks, title) => {
 
 const startCronJobs = () => {
 
-  // 🔔 1. 10-MIN BEFORE REMINDER
+  // 🔔 1. 10-MIN BEFORE REMINDER (FIXED)
   cron.schedule("* * * * *", async () => {
     if (isRunning) return;
     if (mongoose.connection.readyState !== 1) return;
@@ -27,22 +27,50 @@ const startCronJobs = () => {
 
     console.log("⏰ Checking reminders...");
 
-    const now = new Date();
-
     try {
       const tasks = await Task.find({
         completed: false,
         notified: false,
       }).limit(50);
 
+      // current IST date
+      const todayIST = new Date().toLocaleDateString("en-CA", {
+        timeZone: "Asia/Kolkata",
+      });
+
+      // current IST time
+      const nowIST = new Date(
+        new Date().toLocaleString("en-US", {
+          timeZone: "Asia/Kolkata",
+        })
+      );
+
+      const nowMinutes =
+        nowIST.getHours() * 60 + nowIST.getMinutes();
+
       for (const task of tasks) {
         if (!task.date || !task.time || !task.email) continue;
 
-        const taskTime = new Date(`${task.date}T${task.time}:00`);
-        const reminderTime = new Date(taskTime.getTime() - 10 * 60 * 1000);
+        // skip if not today's task
+        if (task.date !== todayIST) continue;
 
-        // ✅ Send ONLY once
-        if (now >= reminderTime && !task.notified) {
+        // convert task time → minutes
+        const [hours, minutes] = task.time.split(":").map(Number);
+        const taskMinutes = hours * 60 + minutes;
+
+        const diff = taskMinutes - nowMinutes;
+
+        console.log(
+          "🕒 NOW:",
+          nowMinutes,
+          "TASK:",
+          taskMinutes,
+          "DIFF:",
+          diff
+        );
+
+        // ✅ send within 10 minutes
+        if (diff <= 10 && diff >= 0 && !task.notified) {
           console.log("🔔 Sending:", task.text);
 
           const success = await sendEmail(
@@ -73,7 +101,9 @@ const startCronJobs = () => {
       console.log("🌅 Morning reminder...");
 
       try {
-        const today = new Date().toLocaleDateString("en-CA");
+        const today = new Date().toLocaleDateString("en-CA", {
+          timeZone: "Asia/Kolkata",
+        });
 
         const tasks = await Task.find({
           completed: false,
@@ -113,7 +143,9 @@ const startCronJobs = () => {
       console.log("🌆 Evening reminder...");
 
       try {
-        const today = new Date().toLocaleDateString("en-CA");
+        const today = new Date().toLocaleDateString("en-CA", {
+          timeZone: "Asia/Kolkata",
+        });
 
         const tasks = await Task.find({
           completed: false,
