@@ -8,6 +8,7 @@
 ![MongoDB](https://img.shields.io/badge/Database-MongoDB-brightgreen)
 ![Cron](https://img.shields.io/badge/Scheduler-Node--Cron-orange)
 ![Email](https://img.shields.io/badge/Email-Brevo-blueviolet)
+![Clerkl](https://img.shields.io/badge/Auth-Clerk-white)
 
 ---
 
